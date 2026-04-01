@@ -1,0 +1,13 @@
+{
+  "name": "artist-intelligence-hub",
+  "version": "1.0.0",
+  "description": "AI-powered artist intelligence and management platform",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "start": "concurrently \"cd server && npm start\" \"cd client && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
