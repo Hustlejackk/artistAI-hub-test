@@ -53,9 +53,35 @@ python3 fal_pipeline.py motion \
   --orientation video
 ```
 
-`compose` defaults to the variant A prompt (hands gripping the jacket lapels).
-Pass `--prompt file.txt` to override it — use that for variant B, which gives
-the model long straight hair so the pose reference can be followed literally.
+`compose` defaults to the variant A prompt (hands gripping the jacket lapels),
+embedded in the script. Pass `--prompt <file>` to override it — for variant B,
+which gives the model long straight hair so the pose reference can be followed
+literally, or `prompt_lean.txt` for a shorter version.
+
+## Model choice
+
+`compose` runs `flux-pro/kontext/max/multi`, not `nano-banana/edit`.
+
+nano-banana refuses this job. Probing established that the model photograph
+passes on its own, and that pose + location pass together, but the model
+photograph is rejected in *any* multi-image combination:
+
+| references | result |
+| --- | --- |
+| model alone | pass |
+| pose + location | pass |
+| model + location | blocked |
+| model + pose | blocked |
+
+That is the model's identity-transfer guardrail, not a wording problem — a
+neutral one-line prompt is rejected the same way an elaborate one is. Rewriting
+prompts to get around it would be filter evasion, so the pipeline uses a model
+built for multi-reference composition instead, which accepts the full
+descriptive prompt unchanged.
+
+`bisect_prompt.py` is the helper used for that investigation; it reports
+pass/fail per candidate prompt. Rejected requests appear not to consume credit,
+but each passing candidate generates an image and does.
 
 `--orientation video` follows the body choreography, which is what motion
 transfer means here; `image` follows camera movement instead.

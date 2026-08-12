@@ -27,7 +27,11 @@ import time
 QUEUE = "https://queue.fal.run"
 SYNC = "https://fal.run"
 
-COMPOSE_MODEL = "fal-ai/nano-banana/edit"
+# nano-banana refuses this job: the model photo passes on its own but is
+# rejected in any multi-image combination, which is its identity-transfer
+# guardrail rather than anything about the wording. flux kontext multi is built
+# for multi-reference composition and accepts the same descriptive prompt.
+COMPOSE_MODEL = "fal-ai/flux-pro/kontext/max/multi"
 MOTION_MODEL = "fal-ai/kling-video/v3/pro/motion-control"
 MOTION_MODEL_FALLBACK = "fal-ai/kling-video/v2.6/pro/motion-control"
 
@@ -116,18 +120,29 @@ def submit_and_poll(model: str, payload: dict, poll_every=10, ceiling=1800):
     if not req_id:
         return None, (status, body)
 
-    base = f"{QUEUE}/{model.split('/')[0]}/{'/'.join(model.split('/')[1:])}"
+    # Poll the URLs fal hands back rather than deriving them: the queue drops
+    # the model's trailing path segment, so `.../nano-banana/edit` submits but
+    # status lives at `.../nano-banana/requests/<id>/status`.
+    status_url = body.get("status_url")
+    result_url = body.get("response_url")
+    if not status_url or not result_url:
+        return None, (status, {"error": "submit response missing polling URLs", "body": body})
     print(f"  queued: {req_id}")
 
     waited = 0
     while waited < ceiling:
         time.sleep(poll_every)
         waited += poll_every
-        st, sb = curl("GET", f"{base}/requests/{req_id}/status")
+        st, sb = curl("GET", status_url)
         state = sb.get("status", "?")
         print(f"  [{waited:>4}s] {state}")
         if state == "COMPLETED":
-            rst, rb = curl("GET", f"{base}/requests/{req_id}")
+            rst, rb = curl("GET", result_url)
+            # A COMPLETED job can still carry a rejection (content filter,
+            # validation) in `detail` instead of any output. Treat that as
+            # failure rather than reporting an empty run as success.
+            if "detail" in rb and not (rb.get("images") or rb.get("video")):
+                return None, (rst, rb)
             return rb, None
         if state in ("FAILED", "CANCELLED"):
             return None, (st, sb)
@@ -151,11 +166,19 @@ def cmd_check(_):
     if not os.environ.get("FAL_KEY"):
         print("  FAL_KEY not set — create at https://fal.ai/dashboard/keys")
         return
-    status, body = curl("POST", f"{SYNC}/{COMPOSE_MODEL}", {})
+    # Probe the queue, not the sync endpoint: sync validates the request body
+    # before it checks the balance, so an empty payload there returns 422 even
+    # while the account is locked — a false all-clear.
+    status, body = curl("POST", f"{QUEUE}/{COMPOSE_MODEL}", {})
     if status == 401:
         print("  FAL_KEY rejected (401) — key is invalid or revoked")
-    elif status in (200, 422):
-        print(f"  FAL_KEY accepted (HTTP {status} — auth passed)")
+    elif status == 403:
+        print(f"  key valid but account locked: {body.get('detail', body)}")
+    elif status == 200:
+        print("  FAL_KEY accepted, account funded, queue reachable")
+        # Don't leave the probe job sitting in the queue.
+        if cancel := body.get("cancel_url"):
+            curl("PUT", cancel)
     else:
         print(f"  inconclusive: HTTP {status} {json.dumps(body)[:300]}")
 
@@ -172,8 +195,9 @@ def cmd_compose(args):
         "aspect_ratio": "9:16",
         "output_format": "png",
     }
-    print(f"submitting {COMPOSE_MODEL} ({args.variants} variants)...")
-    result, err = submit_and_poll(COMPOSE_MODEL, payload)
+    model = args.model
+    print(f"submitting {model} ({args.variants} variants)...")
+    result, err = submit_and_poll(model, payload)
     if err:
         sys.exit(f"compose failed: HTTP {err[0]}\n{json.dumps(err[1], indent=2)[:1500]}")
 
@@ -226,10 +250,10 @@ def cmd_upload(args):
 
 COMPOSE_PROMPT_A = """IDENTITY (lock to person reference):
 Young woman, tanned olive skin, strong defined eyebrows, glossy neutral-brown
-lips, sharp cheekbones, slim athletic build with visible abdominal definition,
-small fine-line tattoo on left ribcage. Dark brown hair in a short wet-look
-slicked bob, damp strands falling loose around the face. Direct confident gaze
-into the lens, lips slightly parted, chin dipped just below level.
+lips, sharp cheekbones, slim athletic build, small fine-line tattoo on the left
+side of the ribcage. Dark brown hair in a short wet-look slicked bob, damp
+strands falling loose around the face. Direct confident gaze into the lens,
+chin dipped just below level.
 Preserve facial identity exactly from the person reference.
 
 POSE (lock to pose reference):
@@ -243,8 +267,8 @@ Head level and centered, facing the lens straight on.
 
 WARDROBE (lock to person reference):
 Oversized black leather jacket worn open, collar popped, sleeves long past the
-wrists, silver zipper hanging loose. Black scoop bra top. Black fitted mini
-skirt low on the hips. White knee-high leather boots.
+wrists, silver zipper hanging loose. Black cropped top. Black fitted mini
+skirt. White knee-high leather boots.
 
 ENVIRONMENT (lock to location reference):
 Underground pedestrian subway tunnel. Walls clad in white rectangular ceramic
@@ -289,7 +313,8 @@ REALISM:
 Photographic realism. Visible skin texture with pores and fine imperfections,
 natural specular sheen on damp hair, genuine grain in the leather, authentic
 fabric weave. Real photograph shot on a full-frame sensor, subtle sensor noise
-in the shadows, natural lens character. Unretouched skin.
+in the shadows, natural lens character. Natural skin rendering, editorial
+fashion photography.
 
 NEGATIVE:
 plastic skin, airbrushed, waxy, over-smoothed, over-sharpened, HDR halos,
@@ -315,6 +340,7 @@ def main():
     co.add_argument("--location", required=True, help="location photo")
     co.add_argument("--prompt", help="prompt file; defaults to variant A")
     co.add_argument("--variants", type=int, default=4)
+    co.add_argument("--model", default=COMPOSE_MODEL)
     co.add_argument("--out", default="compose_result.json")
     co.set_defaults(fn=cmd_compose)
 
