@@ -1,0 +1,76 @@
+IDENTITY (lock to person reference):
+Young woman, tanned olive skin, strong defined eyebrows, glossy neutral-brown
+lips, sharp cheekbones, slim athletic build, small fine-line tattoo on the left
+side of the ribcage. Dark brown hair in a short wet-look slicked bob, damp
+strands falling loose around the face. Direct confident gaze into the lens,
+chin dipped just below level.
+Preserve facial identity exactly from the person reference.
+
+POSE (lock to pose reference):
+Standing frontal to camera, full body. Weight slightly forward, subtle lean
+into the lens, shoulders rolled marginally forward and relaxed. Both arms bent,
+elbows dropped close to the ribs and angled slightly outward, forearms raised so
+both hands sit at mid-chest to waist height. Each hand grips a lapel of the open
+leather jacket, pulling it forward and outward, forearms roughly symmetrical.
+Legs straight, feet planted about shoulder width apart, hips square to camera.
+Head level and centered, facing the lens straight on.
+
+WARDROBE (lock to person reference):
+Oversized black leather jacket worn open, collar popped, sleeves long past the
+wrists, silver zipper hanging loose. Black cropped top. Black fitted mini
+skirt. White knee-high leather boots.
+
+ENVIRONMENT (lock to location reference):
+Underground pedestrian subway tunnel. Walls clad in white rectangular ceramic
+tile with fine grey grout lines, faintly stained and aged. Recessed fluorescent
+strip lights set into the ceiling edges on both sides, running away from camera
+in one-point perspective. Coarse dark grey concrete ceiling. Chrome tubular
+handrails mounted on both walls at hip height. Dark asphalt floor, matte and
+slightly damp. Convex security mirror on the far wall. Metal drainage grate in
+the foreground floor. Subject stands centered in the corridor, close to camera,
+roughly 1.5 metres away, filling most of the frame height. Framed from just
+above the head down to the boots, with the head, shoulders, chest and both arms
+large and clearly visible in frame.
+
+CAMERA & LENS:
+50mm full-frame equivalent, f/2.8, camera at chest height, level, centered on the
+corridor vanishing point. Corridor geometry stays readable in depth; gentle
+falloff on the far tiles and back wall while the subject holds critical focus.
+Mild natural wide-angle perspective, no distortion on the face. Vertical 9:16.
+
+LIGHTING:
+Motivated entirely by the practical fluorescents. Hard cool key spilling from
+the ceiling strips above and to both sides - 6000K, bluish-white - carving bright
+speculars along the shoulders, collarbones and the top of the leather jacket,
+with a crisp rim down both arms. A soft frontal bounce off the white tile wall
+lifts the face just enough to keep eyes and features fully readable, killing any
+raccoon-eye from the top light. The head, shoulders and torso are the brightest
+part of the frame and clearly separated from the background. Light falls off
+below the knees. Background tunnel two
+stops darker than the subject, so she separates cleanly.
+
+SHADOWS & GROUNDING:
+Tight dark contact shadow directly under both boots. Soft short shadow pooling
+behind her feet, cast forward-down by the overhead strips. Faint blurred
+reflection of the boots and lower legs in the damp asphalt. Subtle cool bounce
+from the white tiles onto the outer edges of the jacket. Ambient occlusion where
+the jacket meets the torso and under the chin.
+
+COLOR & GRADE:
+Cold desaturated palette - blue-grey tiles, near-black floor, cyan-white
+highlights. Skin retains its warm tan against the cold surroundings. Deep
+crushed blacks, controlled highlights on the fluorescent tubes with slight
+bloom. Cinematic, not HDR.
+
+REALISM:
+Photographic realism. Visible skin texture with pores and fine imperfections,
+natural specular sheen on damp hair, genuine grain in the leather, authentic
+fabric weave. Real photograph shot on a full-frame sensor, subtle sensor noise
+in the shadows, natural lens character. Natural skin rendering, editorial
+fashion photography.
+
+NEGATIVE:
+plastic skin, airbrushed, waxy, over-smoothed, over-sharpened, HDR halos,
+warm orange lighting, extra fingers, deformed hands, floating feet, missing
+contact shadow, flat frontal flash, blown highlights, text, watermark,
+distorted face, changed facial identity, long hair

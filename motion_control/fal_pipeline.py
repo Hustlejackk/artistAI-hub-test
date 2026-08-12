@@ -183,6 +183,37 @@ def cmd_check(_):
         print(f"  inconclusive: HTTP {status} {json.dumps(body)[:300]}")
 
 
+VISION_MODEL = "fal-ai/any-llm/vision"
+VISION_QUESTION = (
+    "Answer in this exact format on three lines:\n"
+    "BLACK: yes|no  (is the image mostly black, empty or a silhouette?)\n"
+    "UPPERBODY: yes|no  (are the head, shoulders and chest all clearly visible?)\n"
+    "HANDS: <where are her hands and what are they holding, in ten words>"
+)
+
+
+def describe(url: str, question: str = VISION_QUESTION) -> str:
+    """Caption an image so generated output can be checked before it is used.
+
+    Results live on fal.media, which this sandbox cannot fetch, so a vision
+    model is the only way to see what was actually produced. Composites came
+    back as black frames once, and Kling rejects those for having no detectable
+    upper body — worth catching automatically rather than downstream.
+    """
+    st, body = curl("POST", f"{SYNC}/{VISION_MODEL}",
+                    {"model": "google/gemini-flash-1.5",
+                     "prompt": question, "image_url": url}, timeout=150)
+    return body.get("output", f"(vision failed: HTTP {st})").strip()
+
+
+def cmd_verify(args):
+    for url in args.urls:
+        print(f"\n{url}")
+        for line in describe(url).splitlines():
+            if line.strip():
+                print(f"  {line.strip()}")
+
+
 def cmd_compose(args):
     prompt = open(args.prompt).read() if args.prompt else COMPOSE_PROMPT_A
     print("encoding references...")
@@ -203,7 +234,12 @@ def cmd_compose(args):
 
     print("\ncomposite variants:")
     for i, img in enumerate(result.get("images", []), 1):
-        print(f"  [{i}] {img.get('url')}")
+        url = img.get("url")
+        print(f"  [{i}] {url}")
+        if not args.no_verify:
+            for line in describe(url).splitlines():
+                if line.strip():
+                    print(f"        {line.strip()}")
     with open(args.out, "w") as fh:
         json.dump(result, fh, indent=2)
     print(f"\nfull response -> {args.out}")
@@ -214,7 +250,7 @@ def cmd_motion(args):
     payload = {
         "image_url": as_url(args.image),
         "video_url": as_url(args.video),
-        "orientation": args.orientation,
+        "character_orientation": args.orientation,
     }
     model = args.model
     print(f"submitting {model}...")
@@ -341,8 +377,14 @@ def main():
     co.add_argument("--prompt", help="prompt file; defaults to variant A")
     co.add_argument("--variants", type=int, default=4)
     co.add_argument("--model", default=COMPOSE_MODEL)
+    co.add_argument("--no-verify", action="store_true",
+                    help="skip the vision check on each generated image")
     co.add_argument("--out", default="compose_result.json")
     co.set_defaults(fn=cmd_compose)
+
+    ve = sub.add_parser("verify", help="caption image URLs to see what they contain")
+    ve.add_argument("urls", nargs="+")
+    ve.set_defaults(fn=cmd_verify)
 
     mo = sub.add_parser("motion", help="transfer motion onto the composite")
     mo.add_argument("--image", required=True, help="composite still (path or url)")
